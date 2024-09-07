@@ -6,6 +6,7 @@ package redfish
 
 import (
 	"encoding/json"
+	"strings"
 
 	"github.com/stmcginnis/gofish/common"
 )
@@ -278,7 +279,7 @@ type SimpleUpdateParameters struct {
 	// ImageURI is the URI of the software image to install.
 	ImageURI string
 	// Password to access the URI specified by the ImageURI parameter.
-	Passord string `json:",omitempty"`
+	Password string `json:",omitempty"`
 	// Targets shall contain zero or more URIs that indicate where to apply the update image.
 	// These targets should correspond to software inventory instances or their related items.
 	// If this parameter is not present or contains no targets, the service shall apply the
@@ -303,8 +304,16 @@ type SimpleUpdateParameters struct {
 
 // SimpleUpdate will update installed software components using a software image file
 // located at an ImageURI parameter-specified URI.
-func (updateService *UpdateService) SimpleUpdate(parameters *SimpleUpdateParameters) error {
-	return updateService.Post(updateService.simpleUpdateTarget, parameters)
+// This returns the task ID as a string and an error
+func (updateService *UpdateService) SimpleUpdate(parameters *SimpleUpdateParameters) (string, error) {
+	resp, err := updateService.PostWithResponse(updateService.simpleUpdateTarget, parameters)
+	if err != nil {
+		return "", err
+	}
+
+	id := strings.Split(resp.Header.Get("Location"), "/")
+
+	return id[len(id)-1], err
 }
 
 // StartUpdate starts updating all images that have been previously invoked using an
